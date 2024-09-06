@@ -1,0 +1,878 @@
+{
+  "name": "Postgres Leads Active Campaign - Armazenar Leads Atualmente",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extracting the JSON body from the webhook data\nconst body = $json[\"body\"];\n\n// Define pattern for matching datasource keys\nconst patternDatasource = /^contact\\[fields\\]\\[.*datasource\\]$/;\n\n// Helper function to get the most recent date and its associated field name\nconst getMostRecentDateField = (pattern) => {\n  const dateFields = Object.keys(body).filter(key => pattern.test(key));\n  let mostRecentDate = null;\n  let recentField = null;\n  \n  dateFields.forEach(field => {\n    const dateValue = new Date(body[field]);\n    if (!mostRecentDate || dateValue > mostRecentDate) {\n      mostRecentDate = dateValue;\n      recentField = field;\n    }\n  });\n\n  return recentField;\n};\n\n// Extract and clean field name\nconst cleanFieldName = (fieldName) => {\n  const prefix = \"contact[fields][\";\n  const suffix = \"datasource]\";\n  if (fieldName.startsWith(prefix) && fieldName.endsWith(suffix)) {\n    return fieldName.substring(prefix.length, fieldName.length - suffix.length);\n  }\n  return fieldName;\n};\n\n// Get the most recent datasource field\nconst mostRecentDatasourceField = getMostRecentDateField(patternDatasource);\n\n// Extract the date and cleaned field name\nconst datasourceValue = mostRecentDatasourceField ? body[mostRecentDatasourceField] : null;\nconst baseFieldName = mostRecentDatasourceField ? cleanFieldName(mostRecentDatasourceField) : '';\n\nreturn {\n  json: {\n    campaign: baseFieldName,\n    date: datasourceValue\n  }\n};\n"
+      },
+      "id": "62ca2359-3e38-4248-86a5-56e610953a43",
+      "name": "Process Webhook data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f5ca06e4-1abc-4d9a-8b13-74de919f6ecc",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "b4c2f448-9ce9-4c50-ad80-a48c5adc2606",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1f8bfff5-527e-44a2-8801-9210a4139490",
+      "name": "Campaign found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2300,
+        200
+      ],
+      "alwaysOutputData": false,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "leads_active_campaign",
+          "mode": "list",
+          "cachedResultName": "leads_active_campaign"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $('Webhook Active Campaign').item.json.body['contact[email]'] }}",
+            "utm_source": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmsource]'] }}",
+            "utm_medium": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmmedium]'] }}",
+            "utm_campaign": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmcampaign]'] }}",
+            "utm_term": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmterm]'] }}",
+            "utm_content": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmcontent]'] }}",
+            "data": "={{ $('Process Webhook data').item.json.date }}",
+            "id_correspondente": "={{ $json.id }}",
+            "estado": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][estado]'] }}",
+            "sistema_operacional": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][sis_operacional]'] }}",
+            "cep": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][cep]'] }}",
+            "navegador": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][browser]'] }}",
+            "cidade": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][cidade]'] }}",
+            "dispositivo": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][dispositivo]'] }}",
+            "pais": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][pais]'] }}",
+            "fonte": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'source]'].trim().toUpperCase() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id_correspondente",
+              "displayName": "id_correspondente",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "utm_source",
+              "displayName": "utm_source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "utm_medium",
+              "displayName": "utm_medium",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "utm_campaign",
+              "displayName": "utm_campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "utm_term",
+              "displayName": "utm_term",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "utm_content",
+              "displayName": "utm_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dispositivo",
+              "displayName": "dispositivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "navegador",
+              "displayName": "navegador",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cep",
+              "displayName": "cep",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cidade",
+              "displayName": "cidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pais",
+              "displayName": "pais",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sistema_operacional",
+              "displayName": "sistema_operacional",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "fonte",
+              "displayName": "fonte",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c170ea4a-79d6-4329-a7bb-6f5e12f57715",
+      "name": "Leads Active Campaign Insert",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2520,
+        20
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "U8WnooCTi2OSArHP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1kAfJ4KLqZwSTu91bRL1umoHQjbcRyd8t-8_21xK8DxU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=gid=0",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "expert": "CATIA DAMASCENO",
+            "nome_campanha": "={{ $('Process Webhook data').item.json.campaign.toUpperCase() }}",
+            "landing_page": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'pagina]'].split('/?')[0].replace(/^http:/, 'https:').trim() }}",
+            "fonte": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'source]'].trim().toUpperCase() }}",
+            "email": "={{ $('Webhook Active Campaign').item.json.body['contact[email]'] }}",
+            "utm_source": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmsource]'] }}",
+            "utm_medium": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmmedium]'] }}",
+            "utm_campaign": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmcampaign]'] }}",
+            "utm_term": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmterm]'] }}",
+            "utm_content": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $('Process Webhook data').item.json.campaign + 'utmcontent]'] }}",
+            "data": "={{ $('Process Webhook data').item.json.date }}",
+            "dispositivo": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][dispositivo]'] }}",
+            "sistema_operacional": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][sis_operacional]'] }}",
+            "pais": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][pais]'] }}",
+            "estado": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][estado]'] }}",
+            "cidade": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][cidade]'] }}",
+            "cep": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][cep]'] }}",
+            "navegador": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][browser]'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "expert",
+              "displayName": "expert",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nome_campanha",
+              "displayName": "nome_campanha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "landing_page",
+              "displayName": "landing_page",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "versao_lancamento",
+              "displayName": "versao_lancamento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "fonte",
+              "displayName": "fonte",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "utm_source",
+              "displayName": "utm_source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "utm_medium",
+              "displayName": "utm_medium",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "utm_campaign",
+              "displayName": "utm_campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "utm_term",
+              "displayName": "utm_term",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "utm_content",
+              "displayName": "utm_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dispositivo",
+              "displayName": "dispositivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "navegador",
+              "displayName": "navegador",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cep",
+              "displayName": "cep",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cidade",
+              "displayName": "cidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "pais",
+              "displayName": "pais",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sistema_operacional",
+              "displayName": "sistema_operacional",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Record ID",
+              "displayName": "Record ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Result",
+              "displayName": "Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f535952e-ffd4-4ca1-ac9d-23101e04bd09",
+      "name": "Save lead in Sheets for further inspection",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.3,
+      "position": [
+        2520,
+        360
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XQvRQ2zyi5fqdIbr",
+          "name": "Suporte@renatodias.com.br"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "4b82657f-f94d-4424-8114-ccefb5e1254a",
+              "leftValue": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $json[\"campaign\"] + 'pagina]'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c05997fe-4f21-48b1-9be9-8f497f016014",
+      "name": "Lead with landing page informed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1420,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "campanhas_active_campaign",
+          "mode": "list",
+          "cachedResultName": "campanhas_active_campaign"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "landing_page",
+              "condition": "IS NULL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "01f9ede5-e469-4d3f-91b7-79a235a5042a",
+      "name": "Get campaigns without landing page",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1640,
+        520
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "U8WnooCTi2OSArHP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "campanhas_active_campaign",
+          "mode": "list",
+          "cachedResultName": "campanhas_active_campaign"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "519321e8-7ab2-4879-b4ec-64a1494792f6",
+      "name": "Select campaign by ID",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2080,
+        520
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "credentials": {
+        "postgres": {
+          "id": "U8WnooCTi2OSArHP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "campanhas_active_campaign",
+          "mode": "list",
+          "cachedResultName": "campanhas_active_campaign"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "landing_page",
+              "value": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $json[\"campaign\"] + 'pagina]']\n.split('/?')[0]\n.replace(/^http:/, 'https:')\n.replace('.com.br/', '.com/')\n .replace(/\\/+$/, '')\n.trim()\n}}\n"
+            },
+            {
+              "column": "landing_page",
+              "value": "={{ $('Webhook Active Campaign').item.json.body['contact[fields][' + $json[\"campaign\"] + 'pagina]']\n.split('/?')[0]\n.replace(/^http:/, 'https:')\n.replace('.com/', '.com.br/')\n .replace(/\\/+$/, '')\n.trim()\n}}"
+            }
+          ]
+        },
+        "combineConditions": "OR",
+        "options": {}
+      },
+      "id": "30693886-2960-4230-a3fc-fd54f0509e25",
+      "name": "Select campaign by landing page",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1640,
+        200
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "U8WnooCTi2OSArHP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e6a76f5e-67a1-47c8-bafd-be03e9b3db36",
+              "leftValue": "={{ $json.nome_campanha.replace(/-/g, '').toUpperCase().trim() }}",
+              "rightValue": "={{ $('Process Webhook data').item.json.campaign.toUpperCase().trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "22a7a8cb-b4a6-4d5b-b1fd-3116d4ea1f5f",
+      "name": "Filter by campaign name",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        1860,
+        520
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "341a7223-119e-4679-a8fc-6550a0216682",
+        "options": {}
+      },
+      "id": "9459bfc3-e1c6-4853-a32f-7d5aae5a82cd",
+      "name": "Webhook Active Campaign",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        980,
+        360
+      ],
+      "webhookId": "341a7223-119e-4679-a8fc-6550a0216682"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Process Webhook data": {
+      "main": [
+        [
+          {
+            "node": "Lead with landing page informed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign found?": {
+      "main": [
+        [
+          {
+            "node": "Leads Active Campaign Insert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save lead in Sheets for further inspection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead with landing page informed?": {
+      "main": [
+        [
+          {
+            "node": "Select campaign by landing page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get campaigns without landing page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get campaigns without landing page": {
+      "main": [
+        [
+          {
+            "node": "Filter by campaign name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select campaign by landing page": {
+      "main": [
+        [
+          {
+            "node": "Campaign found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select campaign by ID": {
+      "main": [
+        [
+          {
+            "node": "Campaign found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter by campaign name": {
+      "main": [
+        [
+          {
+            "node": "Select campaign by ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Active Campaign": {
+      "main": [
+        [
+          {
+            "node": "Process Webhook data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b3e57d1d-aacb-420c-bf01-9e302c866bb8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a9aaa4b061baa8497826cdb029f66eb21effee81f980f66947bc7a3d2fa5d303"
+  },
+  "id": "dnbSIbhkPjn1rgi0",
+  "tags": []
+}
