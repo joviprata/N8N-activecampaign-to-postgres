@@ -15,11 +15,11 @@ Breakdown of organic leads (potential customers who come through non-paid channe
 Distribution of leads and their average cost per day, distribution of leads per source, social media, audience and traffic type. The cost per lead takes into account costs for Facebook Ads, Google Ads and TikTok Ads.
 
 ## Files description:
-- [N8N Postgres Leads Active Campaign.json](https://github.com/joviprata/N8N-activecampaign-to-postgres/blob/main/N8N%20Postgres%20Leads%20Active%20Campaign.json)
+- [N8N Postgres Leads Active Campaign.json](https://github.com/joviprata/N8N-activecampaign-to-postgres/blob/main/N8N%20Postgres%20Leads%20Active%20Campaign.json) <br/>
 The JSON file for the N8N Project. It checks the upcoming lead's landing page or campaign name in Postgres to find the matching campaign ID in the campaigns table. If found, the lead information is saved in the leads table with the corresponding ID; if not, it's saved on Sheets to identify any missing campaigns in the campaigns table.
-- [leads_activecampaign.sql](https://github.com/joviprata/N8N-activecampaign-to-postgres/blob/main/leads_activecampaign.sql)
+- [leads_activecampaign.sql](https://github.com/joviprata/N8N-activecampaign-to-postgres/blob/main/leads_activecampaign.sql) <br/>
 This table contains specific information about the lead: e-mail, UTM parameters, the date it got registered, demographics, device and operational system used, browser and source. To determine the lead's campaign name and details, a foreign key was added, referencing the ID of the primary key found in the Campaigns table.
-- [campaigns_activecampaign.sql](https://github.com/joviprata/N8N-activecampaign-to-postgres/blob/main/campaigns_activecampaign.sql)
+- [campaigns_activecampaign.sql](https://github.com/joviprata/N8N-activecampaign-to-postgres/blob/main/campaigns_activecampaign.sql) <br/>
 This table contains information about the campaigns: what expert in the digital marketing does it belong to, the ad campaign's name, the link to the landing page, the version of the launch campaign, and an auto-incrementing primary key ID.
-- [mat_view_leads_activecampaign.sql](https://github.com/joviprata/N8N-activecampaign-to-postgres/blob/main/mat_view_leads_activecampaign.sql)
+- [mat_view_leads_activecampaign.sql](https://github.com/joviprata/N8N-activecampaign-to-postgres/blob/main/mat_view_leads_activecampaign.sql) <br/>
 A Materialized View for ActiveCampaign leads data in Postgres. It consists of joining the two tables above and getting only relevant information about those two for Looker Studio dashboards, such as: the publicity campaign name and it's expert, the source the lead came from (Facebook, Instagram, etc), e-mail, UTM parameters, the date the lead was registered, the device, operating system and browser used, city, state, country and address information.
